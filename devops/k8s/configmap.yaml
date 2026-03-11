@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cnb-app-config
+  namespace: cakesnbakes
+data:
+  NODE_ENV: "production"
+  PORT: "4000"
+  CLIENT_ORIGIN: "https://cakes.local,http://localhost"
+  WHATSAPP_ENABLED: "false"
+  WHATSAPP_DEFAULT_COUNTRY_CODE: "+91"
+  WHATSAPP_BUSINESS_NAME: "Cakes n Bakes 365"
+  API_BASE: "/api"

@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-db-pvc
+  labels:
+    app.kubernetes.io/name: {{ include "cakesnbakes.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.storage }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-db
+  labels:
+    app.kubernetes.io/name: {{ include "cakesnbakes.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "cakesnbakes.fullname" . }}-db
+  template:
+    metadata:
+      labels:
+        app: {{ include "cakesnbakes.fullname" . }}-db
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.images.postgres.repository }}:{{ .Values.images.postgres.tag }}"
+          imagePullPolicy: {{ .Values.images.postgres.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.dbPort }}
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cakesnbakes.fullname" . }}-secrets
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cakesnbakes.fullname" . }}-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cakesnbakes.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: {{ include "cakesnbakes.fullname" . }}-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-db
+spec:
+  selector:
+    app: {{ include "cakesnbakes.fullname" . }}-db
+  ports:
+    - port: {{ .Values.service.dbPort }}
+      targetPort: {{ .Values.service.dbPort }}

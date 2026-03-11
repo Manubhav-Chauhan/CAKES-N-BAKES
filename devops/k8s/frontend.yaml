@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cnb-frontend
+  namespace: cakesnbakes
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cnb-frontend
+  template:
+    metadata:
+      labels:
+        app: cnb-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/your-github-username/cakesnbakes-frontend:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: API_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: cnb-app-config
+                  key: API_BASE
+            - name: WHATSAPP_NUMBER
+              valueFrom:
+                secretKeyRef:
+                  name: cnb-app-secrets
+                  key: WHATSAPP_NUMBER
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cnb-frontend
+  namespace: cakesnbakes
+spec:
+  selector:
+    app: cnb-frontend
+  ports:
+    - port: 80
+      targetPort: 80

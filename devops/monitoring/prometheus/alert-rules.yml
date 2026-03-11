@@ -1,0 +1,18 @@
+groups:
+  - name: cnb-basic-alerts
+    rules:
+      - alert: BackendDown
+        expr: probe_success{instance="http://host.docker.internal:4000/api/health"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend health endpoint is down"
+
+      - alert: FrontendDown
+        expr: probe_success{instance="http://host.docker.internal:8081/"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Frontend endpoint is down"

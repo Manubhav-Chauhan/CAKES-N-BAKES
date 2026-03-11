@@ -1,0 +1,28 @@
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-migration
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: "{{ .Values.images.postgres.repository }}:{{ .Values.images.postgres.tag }}"
+          command: ["sh", "-c", "psql \"$DATABASE_URL\" -f /migrations/schema.sql"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cakesnbakes.fullname" . }}-secrets
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: schema-file
+              mountPath: /migrations
+      volumes:
+        - name: schema-file
+          configMap:
+            name: {{ .Values.migration.schemaConfigMapName }}
+{{- end }}

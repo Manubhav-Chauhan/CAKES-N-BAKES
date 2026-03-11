@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cakesnbakes
+description: Cakes n Bakes 365 helm chart (final year project style)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

@@ -1,142 +1,186 @@
-# Cakes n Bakes 365
+# Cakes n Bakes 365 - Final Year DevOps Project
 
-A full-stack web app for a local bakery and fast food shop.
+This is a full-stack bakery + fast-food ordering app.
 
-## Stack
+Main goal of this version: project should look like a realistic fresher final-year submission, but still follow proper DevOps practices for deployment.
 
-- **Frontend:** HTML, CSS, Vanilla JS (served via Nginx)
-- **Backend:** Node.js + Express
-- **Database:** PostgreSQL
-- **Proxy:** Nginx (HTTPS, Basic Auth for admin)
+## Application Stack
 
----
+- Frontend: HTML, CSS, Vanilla JS + Nginx
+- Backend: Node.js + Express
+- Database: PostgreSQL
+- Reverse Proxy: Nginx (HTTPS + admin route protection)
 
-## Prerequisites
+## DevOps Tools Used
 
-- Node.js 20+
-- npm
-- PostgreSQL 14+
-- Docker + Docker Compose *(for containerized setup)*
+- Git + GitHub (source control)
+- GitHub Actions (`.github/workflows/ci-cd.yml`)
+- Jenkins (`Jenkinsfile`)
+- Docker + Docker Compose
+- Kubernetes manifests (`devops/k8s`)
+- Helm chart (`devops/helm/cakesnbakes`)
+- Terraform (AWS EC2 provisioning, `devops/terraform/aws-ec2`)
+- Ansible (configuration + deployment, `devops/ansible`)
+- Prometheus + Grafana + Exporters (`devops/monitoring`)
+- Dependabot (`.github/dependabot.yml`)
 
----
-
-## Running Without Docker
-
-### 1. Database
-
-```bash
-createdb cakesnbakes
-psql -d cakesnbakes -f backend/sql/schema.sql
-```
-
-### 2. Backend
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-# Edit .env — set DATABASE_URL and required ADMIN_* vars
-npm run dev
-```
-
-Backend runs at `http://localhost:4000`.
-
-### 3. Frontend
-
-```bash
-cd frontend
-python -m http.server 8081
-```
-
-Frontend runs at `http://localhost:8081`.  
-If your API is not at `http://localhost:4000/api`, update `frontend/config.js`.
-
----
-
-## Running With Docker
+## Quick Start (Docker Compose)
 
 ```bash
 cp .env.ci.example .env
-# Edit .env — fill in ADMIN_USERNAME, ADMIN_PASSWORD, ADMIN_AUTH_SECRET, ADMIN_VIEW_USER, ADMIN_VIEW_PASSWORD
-docker compose up --build
+# update required values in .env
+docker compose up -d --build
 ```
 
-| URL | Description |
-|-----|-------------|
-| `https://localhost` | Frontend (HTTPS via proxy) |
-| `http://localhost:8081` | Frontend (direct, localhost only) |
-| `https://localhost/api/health` | Backend health check |
-| `https://localhost/admin` | Admin dashboard (Basic Auth protected) |
+App endpoints:
 
-> The proxy generates a self-signed certificate on first boot. Your browser will show a security warning — this is expected for local dev.
+- `https://localhost`
+- `https://localhost/api/health`
+- `https://localhost/admin` (basic auth protected)
 
----
+Smoke test:
 
-## Required Environment Variables
+```bash
+./scripts/smoke-test.sh
+```
 
-| Variable | Description |
-|----------|-------------|
-| `ADMIN_USERNAME` | Admin login username |
-| `ADMIN_PASSWORD` | Admin login password |
-| `ADMIN_AUTH_SECRET` | Secret for signing admin JWT tokens |
-| `ADMIN_TOKEN_TTL_SECONDS` | Token expiry in seconds (default: `43200`) |
-| `ADMIN_VIEW_USER` | HTTP Basic Auth username for `/admin` |
-| `ADMIN_VIEW_PASSWORD` | HTTP Basic Auth password for `/admin` |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `CLIENT_ORIGIN` | Allowed CORS origins (comma-separated) |
+## CI/CD Pipelines
 
-For WhatsApp order notifications (optional), also set `WHATSAPP_ACCOUNT_SID`, `WHATSAPP_AUTH_TOKEN`, `WHATSAPP_FROM`, and `WHATSAPP_DEFAULT_COUNTRY_CODE`.
+### 1) GitHub Actions
 
----
+File: `.github/workflows/ci-cd.yml`
 
-## LAN Access (Docker)
+Pipeline stages:
 
-To access from other devices on the same network:
+1. Backend install + syntax check
+2. Docker compose validation
+3. Helm lint + Terraform fmt check
+4. Docker build + smoke test
+5. Publish backend/frontend images to GHCR (on push to `main`/`master`)
 
-1. Find your machine's IP (e.g. `192.168.1.50`).
-2. Set in `.env`:
-   ```
-   CLIENT_ORIGIN=https://192.168.1.50,http://192.168.1.50,https://localhost,http://localhost:8081,http://localhost
-   SSL_CN=192.168.1.50
-   SSL_ALT_NAMES=DNS:localhost,IP:127.0.0.1,IP:192.168.1.50
-   ```
-3. Recreate the cert volume and restart:
-   ```bash
-   docker compose down
-   docker volume rm cakesnbakes_nginx-certs
-   docker compose up --build
-   ```
+### 2) Jenkins
 
----
+File: `Jenkinsfile`
 
-## Backend Dependencies
+Pipeline stages:
 
-| Package | Purpose |
-|---------|---------|
-| `express` | HTTP server |
-| `pg` | PostgreSQL client |
-| `zod` | Request validation |
-| `helmet` | Security headers |
-| `cors` | CORS middleware |
-| `morgan` | Request logging |
-| `dotenv` | Environment config |
-| `nodemon` *(dev)* | Auto-restart on file change |
+1. Checkout
+2. Preflight checks
+3. Prepare env
+4. Backend static checks
+5. Build images
+6. Deploy with compose
+7. Smoke tests (`scripts/smoke-test.sh`)
 
----
+## Kubernetes Deployment
 
-## Key API Endpoints
+Basic manifests are in `devops/k8s`.
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/health` | Health check |
-| `GET` | `/api/categories` | List categories |
-| `GET` | `/api/menu?category=Bakery` | List menu items |
-| `GET` | `/api/cart/:sessionId` | Get cart |
-| `POST` | `/api/cart/:sessionId/items` | Add item to cart |
-| `PATCH` | `/api/cart/:sessionId/items/:itemId` | Update item quantity |
-| `DELETE` | `/api/cart/:sessionId/items/:itemId` | Remove item |
-| `POST` | `/api/orders` | Place order |
-| `PATCH` | `/api/orders/:orderId/status` | Update order status *(admin token required)* |
-| `POST` | `/api/admin/login` | Admin login |
-| `GET` | `/api/admin/dashboard` | Admin dashboard *(admin token required)* |
-| `POST` | `/api/whatsapp/inbound` | Twilio WhatsApp webhook |
+```bash
+kubectl apply -f devops/k8s/namespace.yaml
+kubectl apply -f devops/k8s/configmap.yaml
+kubectl apply -f devops/k8s/secret.example.yaml
+kubectl apply -f devops/k8s/postgres.yaml
+kubectl apply -f devops/k8s/backend.yaml
+kubectl apply -f devops/k8s/frontend.yaml
+kubectl apply -f devops/k8s/ingress.yaml
+kubectl apply -f devops/k8s/hpa.yaml
+```
+
+DB migration job:
+
+```bash
+kubectl -n cakesnbakes create configmap cnb-schema \
+  --from-file=schema.sql=backend/sql/schema.sql
+kubectl apply -f devops/k8s/db-migration-job.yaml
+```
+
+## Helm Deployment
+
+```bash
+helm upgrade --install cnb devops/helm/cakesnbakes -n cakesnbakes --create-namespace
+```
+
+## Terraform + Ansible Deployment (VM based)
+
+1. Provision EC2 using Terraform:
+
+```bash
+cd devops/terraform/aws-ec2
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform plan
+terraform apply
+```
+
+2. Deploy app on VM using Ansible:
+
+```bash
+cd /home/rakshit/new-project
+cp devops/ansible/inventory.ini.example devops/ansible/inventory.ini
+# update server IP and key path
+ansible-galaxy collection install -r devops/ansible/requirements.yml
+ansible-playbook -i devops/ansible/inventory.ini devops/ansible/deploy.yml
+```
+
+## Monitoring Setup
+
+```bash
+cd devops/monitoring
+docker compose -f docker-compose.monitoring.yml up -d
+```
+
+Dashboards:
+
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3001` (admin/admin123)
+
+## Makefile Commands
+
+```bash
+make help
+make up
+make smoke
+make ci-check
+make monitor-up
+make helm-install
+```
+
+## DevOps Practices Implemented
+
+- CI on every PR and push
+- CD pipeline for image publishing
+- Containerized app and environment parity
+- IaC for infra (Terraform)
+- Config management (Ansible)
+- Orchestration (Kubernetes + Helm)
+- Health checks + smoke tests
+- Basic observability and alert rules
+- Dependency update automation
+- Secret separation using env/secret files
+
+## Project Structure
+
+```text
+.
+├── backend/
+├── frontend/
+├── proxy/
+├── ci/
+├── scripts/
+├── devops/
+│   ├── ansible/
+│   ├── helm/
+│   ├── k8s/
+│   ├── monitoring/
+│   └── terraform/
+├── .github/workflows/
+├── Jenkinsfile
+└── docker-compose.yml
+```
+
+## Important Notes
+
+- `secret.example.yaml` is only sample; do not use sample secrets in production.
+- Replace image names (`ghcr.io/your-github-username/...`) before deployment.
+- For real production, use managed secret tools (AWS Secrets Manager, Vault, etc.).

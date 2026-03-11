@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-backend
+  labels:
+    app.kubernetes.io/name: {{ include "cakesnbakes.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount.backend }}
+  selector:
+    matchLabels:
+      app: {{ include "cakesnbakes.fullname" . }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ include "cakesnbakes.fullname" . }}-backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag }}"
+          imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.backendPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "cakesnbakes.fullname" . }}-config
+            - secretRef:
+                name: {{ include "cakesnbakes.fullname" . }}-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.backendPort }}
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: {{ .Values.service.backendPort }}
+          resources:
+            {{- toYaml .Values.resources.backend | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-backend
+spec:
+  selector:
+    app: {{ include "cakesnbakes.fullname" . }}-backend
+  ports:
+    - port: {{ .Values.service.backendPort }}
+      targetPort: {{ .Values.service.backendPort }}

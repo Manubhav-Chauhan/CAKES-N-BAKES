@@ -1,0 +1,89 @@
+nameOverride: ""
+fullnameOverride: ""
+
+images:
+  backend:
+    repository: ghcr.io/your-github-username/cakesnbakes-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: ghcr.io/your-github-username/cakesnbakes-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  postgres:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+
+service:
+  backendPort: 4000
+  frontendPort: 80
+  dbPort: 5432
+
+ingress:
+  enabled: true
+  className: nginx
+  host: cakes.local
+
+appConfig:
+  NODE_ENV: production
+  PORT: "4000"
+  CLIENT_ORIGIN: "https://cakes.local,http://localhost"
+  WHATSAPP_ENABLED: "false"
+  WHATSAPP_DEFAULT_COUNTRY_CODE: "+91"
+  WHATSAPP_BUSINESS_NAME: "Cakes n Bakes 365"
+  API_BASE: "/api"
+
+secrets:
+  POSTGRES_DB: cakesnbakes
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: change-me
+  DATABASE_URL: postgres://postgres:change-me@{{ include "cakesnbakes.fullname" . }}-db:5432/cakesnbakes
+  ADMIN_USERNAME: admin
+  ADMIN_PASSWORD: change-me
+  ADMIN_AUTH_SECRET: please-change-this-secret
+  ADMIN_TOKEN_TTL_SECONDS: "43200"
+  ADMIN_VIEW_USER: adminviewer
+  ADMIN_VIEW_PASSWORD: change-me
+  WHATSAPP_ACCOUNT_SID: ""
+  WHATSAPP_AUTH_TOKEN: ""
+  WHATSAPP_FROM: ""
+  WHATSAPP_NUMBER: ""
+
+postgres:
+  storage: 2Gi
+
+replicaCount:
+  backend: 2
+  frontend: 2
+
+resources:
+  backend:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  frontend:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+hpa:
+  enabled: true
+  backend:
+    minReplicas: 2
+    maxReplicas: 5
+    averageCpuUtilization: 70
+  frontend:
+    minReplicas: 2
+    maxReplicas: 4
+    averageCpuUtilization: 70
+
+migration:
+  enabled: false
+  schemaConfigMapName: cnb-schema

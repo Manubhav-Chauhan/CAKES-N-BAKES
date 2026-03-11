@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euxo pipefail
+
+apt-get update -y
+apt-get install -y docker.io docker-compose-plugin git
+
+systemctl enable docker
+systemctl start docker
+usermod -aG docker ubuntu || true
+
+mkdir -p /opt
+cd /opt
+if [ ! -d cakesnbakes-365 ]; then
+  git clone ${repo_url} cakesnbakes-365
+fi
+
+cd cakesnbakes-365
+cp .env.ci.example .env || true
+
+# For a real deployment, replace this .env with secure values.
+docker compose up -d --build

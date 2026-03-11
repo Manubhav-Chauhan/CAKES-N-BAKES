@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cnb-backend
+  namespace: cakesnbakes
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cnb-backend
+  template:
+    metadata:
+      labels:
+        app: cnb-backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/your-github-username/cakesnbakes-backend:latest
+          ports:
+            - containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: cnb-app-config
+            - secretRef:
+                name: cnb-app-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cnb-backend
+  namespace: cakesnbakes
+spec:
+  selector:
+    app: cnb-backend
+  ports:
+    - port: 4000
+      targetPort: 4000

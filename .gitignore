@@ -4,3 +4,8 @@ node_modules
 npm-debug.log*
 .idea
 .vscode
+devops/ansible/inventory.ini
+devops/terraform/aws-ec2/.terraform/
+devops/terraform/aws-ec2/*.tfstate
+devops/terraform/aws-ec2/*.tfstate.*
+devops/terraform/aws-ec2/terraform.tfvars

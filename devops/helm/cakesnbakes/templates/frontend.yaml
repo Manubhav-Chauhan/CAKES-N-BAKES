@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-frontend
+  labels:
+    app.kubernetes.io/name: {{ include "cakesnbakes.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount.frontend }}
+  selector:
+    matchLabels:
+      app: {{ include "cakesnbakes.fullname" . }}-frontend
+  template:
+    metadata:
+      labels:
+        app: {{ include "cakesnbakes.fullname" . }}-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.images.frontend.repository }}:{{ .Values.images.frontend.tag }}"
+          imagePullPolicy: {{ .Values.images.frontend.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.frontendPort }}
+          env:
+            - name: API_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cakesnbakes.fullname" . }}-config
+                  key: API_BASE
+            - name: WHATSAPP_NUMBER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cakesnbakes.fullname" . }}-secrets
+                  key: WHATSAPP_NUMBER
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.frontendPort }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.frontendPort }}
+          resources:
+            {{- toYaml .Values.resources.frontend | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-frontend
+spec:
+  selector:
+    app: {{ include "cakesnbakes.fullname" . }}-frontend
+  ports:
+    - port: {{ .Values.service.frontendPort }}
+      targetPort: {{ .Values.service.frontendPort }}

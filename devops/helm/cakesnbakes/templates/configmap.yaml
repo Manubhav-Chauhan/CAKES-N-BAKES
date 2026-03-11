@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cakesnbakes.fullname" . }}-config
+  labels:
+    app.kubernetes.io/name: {{ include "cakesnbakes.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  NODE_ENV: {{ .Values.appConfig.NODE_ENV | quote }}
+  PORT: {{ .Values.appConfig.PORT | quote }}
+  CLIENT_ORIGIN: {{ .Values.appConfig.CLIENT_ORIGIN | quote }}
+  WHATSAPP_ENABLED: {{ .Values.appConfig.WHATSAPP_ENABLED | quote }}
+  WHATSAPP_DEFAULT_COUNTRY_CODE: {{ .Values.appConfig.WHATSAPP_DEFAULT_COUNTRY_CODE | quote }}
+  WHATSAPP_BUSINESS_NAME: {{ .Values.appConfig.WHATSAPP_BUSINESS_NAME | quote }}
+  API_BASE: {{ .Values.appConfig.API_BASE | quote }}

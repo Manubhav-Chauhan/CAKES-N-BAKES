@@ -1,0 +1,48 @@
+---
+- name: Deploy Cakes n Bakes app with Docker Compose
+  hosts: app
+  become: true
+  vars:
+    repo_url: "https://github.com/your-github-username/cakesnbakes-365.git"
+    app_dir: "/opt/cakesnbakes-365"
+
+  tasks:
+    - name: Install required apt packages
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose-plugin
+          - git
+          - python3-pip
+        state: present
+        update_cache: true
+
+    - name: Install docker python module
+      ansible.builtin.pip:
+        name: docker
+
+    - name: Ensure docker service is running
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Clone or update project repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        force: false
+
+    - name: Copy default env file on first run
+      ansible.builtin.copy:
+        src: "{{ app_dir }}/.env.ci.example"
+        dest: "{{ app_dir }}/.env"
+        remote_src: true
+        force: false
+
+    - name: Build and start compose services
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        build: always
+        state: present
