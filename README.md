@@ -1,80 +1,100 @@
-# Cakes n Bakes 365 - Final Year DevOps Project
+# 🍰 Cakes n Bakes 365 — Final Year DevOps Project
 
-This is a full-stack bakery + fast-food ordering app.
+Hey! This is my final year B.Tech project where I built a full-stack bakery ordering app and deployed it using various DevOps tools and practices.
 
-Main goal of this version: project should look like a realistic fresher final-year submission, but still follow proper DevOps practices for deployment.
+The idea is simple — a local bakery called **Cakes n Bakes 365** needs an online ordering system. I built the app from scratch and then focused on containerizing it, setting up CI/CD pipelines, and deploying it on different platforms.
 
-## Application Stack
+## 🛠 Tech Stack
 
-- Frontend: HTML, CSS, Vanilla JS + Nginx
-- Backend: Node.js + Express
-- Database: PostgreSQL
-- Reverse Proxy: Nginx (HTTPS + admin route protection)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | HTML, CSS, Vanilla JS |
+| Backend | Node.js, Express |
+| Database | PostgreSQL |
+| Containerization | Docker, Docker Compose |
+| CI/CD | GitHub Actions, Jenkins |
+| Orchestration | Kubernetes (manifests + Helm) |
+| IaC | Terraform (AWS EC2) |
+| Config Mgmt | Ansible |
+| Monitoring | Prometheus, Grafana |
+| Reverse Proxy | Nginx (with self-signed SSL) |
 
-## DevOps Tools Used
+## 🚀 How to Run (Quick Start)
 
-- Git + GitHub (source control)
-- GitHub Actions (`.github/workflows/ci-cd.yml`)
-- Jenkins (`Jenkinsfile`)
-- Docker + Docker Compose
-- Kubernetes manifests (`devops/k8s`)
-- Helm chart (`devops/helm/cakesnbakes`)
-- Terraform (AWS EC2 provisioning, `devops/terraform/aws-ec2`)
-- Ansible (configuration + deployment, `devops/ansible`)
-- Prometheus + Grafana + Exporters (`devops/monitoring`)
-- Dependabot (`.github/dependabot.yml`)
-
-## Quick Start (Docker Compose)
+This is the easiest way to get everything running locally:
 
 ```bash
-cp .env.ci.example .env
-# update required values in .env
+# 1. clone the repo
+git clone https://github.com/your-username/cakesnbakes365.git
+cd cakesnbakes365
+
+# 2. the .env file already has demo defaults, so just run:
 docker compose up -d --build
 ```
 
-App endpoints:
+Once it's up, open these URLs:
 
-- `https://localhost`
-- `https://localhost/api/health`
-- `https://localhost/admin` (basic auth protected)
+- **App**: https://localhost
+- **Health check**: https://localhost/api/health
+- **Admin panel**: https://localhost/admin (username/password from .env)
 
-Smoke test:
+To run smoke tests:
 
 ```bash
 ./scripts/smoke-test.sh
 ```
 
-## CI/CD Pipelines
+To stop everything:
 
-### 1) GitHub Actions
+```bash
+docker compose down
+```
 
-File: `.github/workflows/ci-cd.yml`
+## 📁 Project Structure
 
-Pipeline stages:
+```
+.
+├── backend/          # Node.js API server
+├── frontend/         # Static HTML/CSS/JS served by Nginx
+├── proxy/            # Nginx reverse proxy (SSL + admin auth)
+├── devops/
+│   ├── k8s/          # Kubernetes manifests
+│   ├── helm/         # Helm chart
+│   ├── terraform/    # Terraform config for AWS EC2
+│   ├── ansible/      # Ansible playbook for deployment
+│   └── monitoring/   # Prometheus + Grafana setup
+├── scripts/          # Helper scripts (smoke test, devops checks)
+├── ci/               # CI helper scripts
+├── .github/workflows/  # GitHub Actions pipeline
+├── Jenkinsfile       # Jenkins pipeline
+├── docker-compose.yml
+├── Makefile
+└── .env
+```
 
-1. Backend install + syntax check
-2. Docker compose validation
-3. Helm lint + Terraform fmt check
-4. Docker build + smoke test
-5. Publish backend/frontend images to GHCR (on push to `main`/`master`)
+## 🔄 CI/CD Pipelines
 
-### 2) Jenkins
+### GitHub Actions (`.github/workflows/ci-cd.yml`)
 
-File: `Jenkinsfile`
+Runs on every push/PR to main:
+1. Install backend deps + syntax check
+2. Validate docker-compose file
+3. Build all containers + run smoke tests
+4. Push images to GitHub Container Registry (on main branch only)
 
-Pipeline stages:
+### Jenkins (`Jenkinsfile`)
 
-1. Checkout
-2. Preflight checks
-3. Prepare env
-4. Backend static checks
-5. Build images
-6. Deploy with compose
-7. Smoke tests (`scripts/smoke-test.sh`)
+Same idea but for Jenkins:
+1. Checkout code
+2. Copy env file
+3. Check backend syntax
+4. Build Docker images
+5. Deploy with docker compose
+6. Run smoke tests
 
-## Kubernetes Deployment
+## ☸️ Kubernetes Deployment
 
-Basic manifests are in `devops/k8s`.
+I wrote raw K8s manifests in `devops/k8s/`:
 
 ```bash
 kubectl apply -f devops/k8s/namespace.yaml
@@ -87,100 +107,69 @@ kubectl apply -f devops/k8s/ingress.yaml
 kubectl apply -f devops/k8s/hpa.yaml
 ```
 
-DB migration job:
-
-```bash
-kubectl -n cakesnbakes create configmap cnb-schema \
-  --from-file=schema.sql=backend/sql/schema.sql
-kubectl apply -f devops/k8s/db-migration-job.yaml
-```
-
-## Helm Deployment
+There's also a Helm chart for easier deployment:
 
 ```bash
 helm upgrade --install cnb devops/helm/cakesnbakes -n cakesnbakes --create-namespace
 ```
 
-## Terraform + Ansible Deployment (VM based)
+## ☁️ Terraform + Ansible (VM Deployment)
 
-1. Provision EC2 using Terraform:
+For deploying on a real VM:
 
 ```bash
+# provision EC2 instance
 cd devops/terraform/aws-ec2
 cp terraform.tfvars.example terraform.tfvars
-terraform init
-terraform plan
-terraform apply
-```
+# edit terraform.tfvars with your AWS details
+terraform init && terraform apply
 
-2. Deploy app on VM using Ansible:
-
-```bash
-cd /home/rakshit/new-project
+# deploy app using Ansible
+cd /path/to/project
 cp devops/ansible/inventory.ini.example devops/ansible/inventory.ini
-# update server IP and key path
-ansible-galaxy collection install -r devops/ansible/requirements.yml
+# update the server IP and key path
 ansible-playbook -i devops/ansible/inventory.ini devops/ansible/deploy.yml
 ```
 
-## Monitoring Setup
+## 📊 Monitoring
 
 ```bash
 cd devops/monitoring
 docker compose -f docker-compose.monitoring.yml up -d
 ```
 
-Dashboards:
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3001 (login: admin / admin123)
 
-- Prometheus: `http://localhost:9090`
-- Grafana: `http://localhost:3001` (admin/admin123)
-
-## Makefile Commands
+## 🧰 Makefile Commands
 
 ```bash
-make help
-make up
-make smoke
-make ci-check
-make monitor-up
-make helm-install
+make help       # see all commands
+make up         # start the app
+make down       # stop the app
+make logs       # follow logs
+make smoke      # run smoke tests
+make ci-check   # run local devops checks
 ```
 
-## DevOps Practices Implemented
+## 📚 What I Learned
 
-- CI on every PR and push
-- CD pipeline for image publishing
-- Containerized app and environment parity
-- IaC for infra (Terraform)
-- Config management (Ansible)
-- Orchestration (Kubernetes + Helm)
-- Health checks + smoke tests
-- Basic observability and alert rules
-- Dependency update automation
-- Secret separation using env/secret files
+- How to containerize a multi-service app with Docker
+- Setting up CI/CD pipelines with GitHub Actions and Jenkins
+- Writing Kubernetes manifests and Helm charts
+- Infrastructure as Code with Terraform
+- Server configuration with Ansible
+- Monitoring with Prometheus and Grafana
+- Nginx reverse proxy with SSL termination
+- Managing secrets and environment variables properly
 
-## Project Structure
+## ⚠️ Notes
 
-```text
-.
-├── backend/
-├── frontend/
-├── proxy/
-├── ci/
-├── scripts/
-├── devops/
-│   ├── ansible/
-│   ├── helm/
-│   ├── k8s/
-│   ├── monitoring/
-│   └── terraform/
-├── .github/workflows/
-├── Jenkinsfile
-└── docker-compose.yml
-```
+- The `secret.example.yaml` has dummy values — don't use in production
+- Replace image names (`ghcr.io/your-github-username/...`) with your own before deploying
+- The SSL cert is self-signed (browsers will show a warning, that's normal)
+- For real production use managed secrets (AWS Secrets Manager, HashiCorp Vault, etc.)
 
-## Important Notes
+---
 
-- `secret.example.yaml` is only sample; do not use sample secrets in production.
-- Replace image names (`ghcr.io/your-github-username/...`) before deployment.
-- For real production, use managed secret tools (AWS Secrets Manager, Vault, etc.).
+Made with ❤️ as part of my B.Tech Final Year Project

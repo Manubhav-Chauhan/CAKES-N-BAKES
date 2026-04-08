@@ -49,6 +49,7 @@ secrets:
   WHATSAPP_AUTH_TOKEN: ""
   WHATSAPP_FROM: ""
   WHATSAPP_NUMBER: ""
+  ADMIN_WHATSAPP_NUMBER: ""
 
 postgres:
   storage: 2Gi

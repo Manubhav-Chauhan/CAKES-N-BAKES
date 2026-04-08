@@ -195,6 +195,175 @@ const loadMenu = async (category) => {
   }
 };
 
+const getUnitLabel = (unitType) => {
+  if (unitType === "kg") return "/kg";
+  if (unitType === "piece") return "/piece";
+  return "";
+};
+
+const CAKE_WEIGHT_OPTIONS = [0.5, 1, 1.5, 2, 2.5, 3];
+const PASTRY_PIECE_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10];
+const HALF_PORTION_SUFFIX = " (Half)";
+
+const stripHalfPortionSuffix = (name) =>
+  String(name || "").endsWith(HALF_PORTION_SUFFIX)
+    ? String(name).slice(0, -HALF_PORTION_SUFFIX.length)
+    : String(name || "");
+
+const getMenuDisplayItems = (items) => {
+  const groups = new Map();
+
+  items.forEach((item) => {
+    if (item.unit_type !== "item") return;
+
+    const baseName = stripHalfPortionSuffix(item.name);
+    const existing = groups.get(baseName) || { full: null, half: null };
+
+    if (item.name.endsWith(HALF_PORTION_SUFFIX)) {
+      existing.half = item;
+    } else {
+      existing.full = item;
+    }
+
+    groups.set(baseName, existing);
+  });
+
+  const displayItems = [];
+
+  items.forEach((item) => {
+    if (item.unit_type !== "item") {
+      displayItems.push({ type: "single", item });
+      return;
+    }
+
+    const baseName = stripHalfPortionSuffix(item.name);
+    const group = groups.get(baseName);
+    const hasBothVariants = Boolean(group?.full && group?.half);
+
+    if (hasBothVariants) {
+      if (item.name !== group.full.name) return;
+
+      displayItems.push({
+        type: "portion",
+        baseName,
+        variants: [
+          { label: "Full", item: group.full },
+          { label: "Half", item: group.half }
+        ]
+      });
+      return;
+    }
+
+    if (item.name.endsWith(HALF_PORTION_SUFFIX) && group?.full) return;
+
+    displayItems.push({ type: "single", item });
+  });
+
+  return displayItems;
+};
+
+const setMenuCardImageFallback = (card) => {
+  const img = card.querySelector("img");
+  if (!img) return;
+  img.onerror = () => {
+    img.src = FALLBACK_IMAGE;
+  };
+};
+
+const createSingleMenuCard = (item) => {
+  const card = document.createElement("article");
+  card.className = "menu-card";
+  const unitLabel = getUnitLabel(item.unit_type);
+  const btnLabel =
+    item.unit_type === "kg"
+      ? "Select Weight"
+      : item.unit_type === "piece"
+        ? "Select Pieces"
+        : "Add to cart";
+
+  card.innerHTML = `
+    <img src="${item.image_url || FALLBACK_IMAGE}" alt="${item.name}" />
+    <div class="content">
+      <h3>${item.name}</h3>
+      <p>${item.description}</p>
+      <div class="price">${currency.format(Number(item.price))} <span class="unit-label">${unitLabel}</span></div>
+      <button class="btn ghost" type="button" data-add-item>${btnLabel}</button>
+    </div>
+  `;
+
+  setMenuCardImageFallback(card);
+
+  card.querySelector("[data-add-item]").addEventListener("click", () => {
+    if (item.unit_type === "kg" || item.unit_type === "piece") {
+      openQtyModal(item);
+    } else {
+      addToCart(item.id, 1);
+    }
+  });
+
+  return card;
+};
+
+const createPortionMenuCard = ({ baseName, variants }) => {
+  const card = document.createElement("article");
+  card.className = "menu-card menu-card-portion";
+  let selectedVariant = variants[0];
+
+  const renderCard = () => {
+    const selectedItem = selectedVariant.item;
+
+    card.innerHTML = `
+      <img src="${selectedItem.image_url || FALLBACK_IMAGE}" alt="${selectedItem.name}" />
+      <div class="content">
+        <div class="menu-card-header">
+          <div>
+            <h3>${baseName}</h3>
+            <p class="menu-card-variant">${selectedVariant.label} Portion</p>
+          </div>
+          <div class="price">${currency.format(Number(selectedItem.price))}</div>
+        </div>
+        <p>${selectedItem.description}</p>
+        <div class="portion-switcher" role="tablist" aria-label="${baseName} portion size">
+          ${variants
+            .map(
+              (variant) => `
+                <button
+                  class="portion-option${variant.item.id === selectedItem.id ? " selected" : ""}"
+                  type="button"
+                  data-portion-id="${variant.item.id}"
+                >
+                  ${variant.label}
+                </button>
+              `
+            )
+            .join("")}
+        </div>
+        <button class="btn ghost" type="button" data-add-portion>Add to cart</button>
+      </div>
+    `;
+
+    setMenuCardImageFallback(card);
+
+    card.querySelectorAll("[data-portion-id]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const nextVariant = variants.find(
+          (variant) => String(variant.item.id) === button.dataset.portionId
+        );
+        if (!nextVariant) return;
+        selectedVariant = nextVariant;
+        renderCard();
+      });
+    });
+
+    card.querySelector("[data-add-portion]").addEventListener("click", () => {
+      addToCart(selectedItem.id, 1);
+    });
+  };
+
+  renderCard();
+  return card;
+};
+
 const renderMenu = (items) => {
   const grid = qs("#menu-grid");
   if (!grid) return;
@@ -205,27 +374,11 @@ const renderMenu = (items) => {
     return;
   }
 
-  items.forEach((item) => {
-    const card = document.createElement("article");
-    card.className = "menu-card";
-    card.innerHTML = `
-      <img src="${item.image_url || FALLBACK_IMAGE}" alt="${item.name}" />
-      <div class="content">
-        <h3>${item.name}</h3>
-        <p>${item.description}</p>
-        <div class="price">${currency.format(Number(item.price))}</div>
-        <button class="btn ghost" data-id="${item.id}">Add to cart</button>
-      </div>
-    `;
-
-    const img = card.querySelector("img");
-    img.onerror = () => {
-      img.src = FALLBACK_IMAGE;
-    };
-
-    card.querySelector("button").addEventListener("click", () => {
-      addToCart(item.id);
-    });
+  getMenuDisplayItems(items).forEach((entry) => {
+    const card =
+      entry.type === "portion"
+        ? createPortionMenuCard(entry)
+        : createSingleMenuCard(entry.item);
 
     grid.appendChild(card);
   });
@@ -245,22 +398,84 @@ const refreshCart = async () => {
 };
 
 const updateCartCount = () => {
-  const count = state.cart.items.reduce((sum, item) => sum + item.quantity, 0);
+  const count = state.cart.items.length;
   const badge = qs("#cart-count");
   if (badge) badge.textContent = count;
 };
 
-const addToCart = async (productId) => {
+const addToCart = async (productId, quantity) => {
   try {
     await request(`/cart/${sessionId}/items`, {
       method: "POST",
-      body: JSON.stringify({ productId, quantity: 1 })
+      body: JSON.stringify({ productId, quantity })
     });
     toast("Added to cart");
     refreshCart();
   } catch (error) {
     toast(error.message);
   }
+};
+
+const openQtyModal = (item) => {
+  const overlay = qs("#qty-modal-overlay");
+  const titleEl = qs("#qty-modal-title");
+  const priceEl = qs("#qty-modal-price");
+  const optionsEl = qs("#qty-modal-options");
+  const totalEl = qs("#qty-modal-total");
+  const addBtn = qs("#qty-modal-add");
+  const closeBtn = qs("#qty-modal-close");
+
+  if (!overlay) return;
+
+  titleEl.textContent = item.name;
+  const unitLabel = item.unit_type === "kg" ? "/kg" : "/piece";
+  priceEl.textContent = `${currency.format(Number(item.price))} ${unitLabel}`;
+
+  const options = item.unit_type === "kg" ? CAKE_WEIGHT_OPTIONS : PASTRY_PIECE_OPTIONS;
+  let selectedQty = options[0];
+
+  const renderOptions = () => {
+    optionsEl.innerHTML = "";
+    options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `qty-option${opt === selectedQty ? " selected" : ""}`;
+      btn.textContent = item.unit_type === "kg" ? `${opt} kg` : `${opt} pc${opt > 1 ? "s" : ""}`;
+      btn.addEventListener("click", () => {
+        selectedQty = opt;
+        renderOptions();
+        updateTotal();
+      });
+      optionsEl.appendChild(btn);
+    });
+  };
+
+  const updateTotal = () => {
+    const total = Number(item.price) * selectedQty;
+    const qtyLabel = item.unit_type === "kg" ? `${selectedQty} kg` : `${selectedQty} pc${selectedQty > 1 ? "s" : ""}`;
+    totalEl.textContent = `${qtyLabel} = ${currency.format(total)}`;
+  };
+
+  renderOptions();
+  updateTotal();
+  overlay.classList.add("open");
+
+  const cleanup = () => {
+    overlay.classList.remove("open");
+    addBtn.replaceWith(addBtn.cloneNode(true));
+    closeBtn.replaceWith(closeBtn.cloneNode(true));
+  };
+
+  qs("#qty-modal-add").addEventListener("click", () => {
+    cleanup();
+    addToCart(item.id, selectedQty);
+  });
+
+  qs("#qty-modal-close").addEventListener("click", cleanup);
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) cleanup();
+  }, { once: true });
 };
 
 const updateCartItem = async (itemId, quantity) => {
@@ -306,20 +521,26 @@ const renderCart = () => {
   state.cart.items.forEach((item) => {
     const card = document.createElement("div");
     card.className = "cart-item";
+    const unitType = item.unitType || "item";
+    const step = unitType === "kg" ? 0.5 : 1;
+    const maxQty = unitType === "kg" ? 5 : 20;
+    const qtyLabel = unitType === "kg" ? `${item.quantity} kg` : unitType === "piece" ? `${item.quantity} pc${item.quantity > 1 ? "s" : ""}` : `${item.quantity}`;
+    const priceLabel = unitType === "kg" ? `${currency.format(item.unitPrice)}/kg` : unitType === "piece" ? `${currency.format(item.unitPrice)}/pc` : currency.format(item.unitPrice);
     card.innerHTML = `
       <header>
         <div>
           <strong>${item.name}</strong>
-          <div class="price">${currency.format(item.unitPrice)}</div>
+          <div class="price">${priceLabel}</div>
         </div>
         <button class="btn ghost" data-remove="${item.id}">Remove</button>
       </header>
       <p>${item.description}</p>
       <div class="quantity-controls">
         <button data-action="decrease" data-id="${item.id}">-</button>
-        <strong>${item.quantity}</strong>
+        <strong>${qtyLabel}</strong>
         <button data-action="increase" data-id="${item.id}">+</button>
       </div>
+      <div class="price" style="text-align:right">Total: ${currency.format(item.lineTotal)}</div>
     `;
 
     card.querySelector("[data-remove]").addEventListener("click", () => {
@@ -329,15 +550,15 @@ const renderCart = () => {
     card.querySelectorAll("[data-action]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const action = btn.dataset.action;
-        if (action === "increase" && item.quantity >= 20) {
-          toast("Maximum 20 per item");
+        if (action === "increase" && item.quantity >= maxQty) {
+          toast(unitType === "kg" ? "Maximum 5 kg" : "Maximum 20 per item");
           return;
         }
-        const newQty = action === "increase" ? item.quantity + 1 : item.quantity - 1;
+        const newQty = action === "increase" ? item.quantity + step : item.quantity - step;
         if (newQty <= 0) {
           removeCartItem(item.id);
         } else {
-          updateCartItem(item.id, newQty);
+          updateCartItem(item.id, Number(newQty.toFixed(2)));
         }
       });
     });

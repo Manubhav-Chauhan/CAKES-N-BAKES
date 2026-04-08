@@ -1,4 +1,8 @@
+# Docker Compose file for Cakes n Bakes 365
+# This starts all 4 services: database, backend API, frontend, and reverse proxy
+
 services:
+  # PostgreSQL database - stores menu items, orders, carts etc.
   db:
     image: postgres:16-alpine
     environment:
@@ -11,6 +15,7 @@ services:
       - db-data:/var/lib/postgresql/data
       - ./backend/sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
 
+  # Node.js backend API
   backend:
     build: ./backend
     environment:
@@ -24,6 +29,7 @@ services:
       WHATSAPP_FROM: ${WHATSAPP_FROM}
       WHATSAPP_DEFAULT_COUNTRY_CODE: "${WHATSAPP_DEFAULT_COUNTRY_CODE}"
       WHATSAPP_BUSINESS_NAME: "${WHATSAPP_BUSINESS_NAME}"
+      ADMIN_WHATSAPP_NUMBER: ${ADMIN_WHATSAPP_NUMBER:-${WHATSAPP_NUMBER}}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       ADMIN_AUTH_SECRET: ${ADMIN_AUTH_SECRET}
@@ -33,6 +39,7 @@ services:
     depends_on:
       - db
 
+  # Frontend - static files served by Nginx
   frontend:
     build: ./frontend
     environment:
@@ -43,6 +50,7 @@ services:
     depends_on:
       - backend
 
+  # Nginx reverse proxy - handles SSL and routes traffic
   proxy:
     build: ./proxy
     environment:

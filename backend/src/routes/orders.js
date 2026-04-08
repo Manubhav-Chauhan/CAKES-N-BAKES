@@ -5,6 +5,8 @@ const asyncHandler = require("../utils/asyncHandler");
 const { validate } = require("../middleware/validate");
 const { requireAdmin } = require("../middleware/adminAuth");
 const {
+  formatAdminOrderAlertMessage,
+  getAdminAlertWhatsAppNumber,
   formatOrderStatusMessage,
   sendWhatsAppMessage
 } = require("../services/whatsapp");
@@ -58,7 +60,7 @@ router.post(
 
     const cartId = cartResult.rows[0].id;
     const itemsResult = await db.query(
-      "SELECT ci.product_id, ci.quantity, ci.unit_price, p.name " +
+      "SELECT ci.product_id, ci.quantity, ci.unit_price, p.name, p.unit_type " +
         "FROM cart_items ci JOIN products p ON ci.product_id = p.id " +
         "WHERE ci.cart_id = $1",
       [cartId]
@@ -71,9 +73,9 @@ router.post(
     const items = itemsResult.rows.map((row) => ({
       productId: row.product_id,
       name: row.name,
-      quantity: row.quantity,
+      quantity: Number(row.quantity),
       unitPrice: Number(row.unit_price),
-      lineTotal: Number(row.unit_price) * row.quantity
+      lineTotal: Number(row.unit_price) * Number(row.quantity)
     }));
 
     const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -110,6 +112,19 @@ router.post(
 
     await db.query("DELETE FROM cart_items WHERE cart_id = $1", [cartId]);
 
+    const orderPayload = {
+      orderId,
+      createdAt: orderResult.rows[0].created_at,
+      customerName,
+      phone,
+      address,
+      notes: notes || "",
+      whatsappOptIn,
+      items,
+      totals: { subtotal, tax, total },
+      status: "placed"
+    };
+
     if (whatsappOptIn) {
       try {
         await sendWhatsAppMessage({
@@ -125,19 +140,20 @@ router.post(
       }
     }
 
-    res.status(201).json({
-      data: {
-        orderId,
-        createdAt: orderResult.rows[0].created_at,
-        customerName,
-        phone,
-        address,
-        notes: notes || "",
-        whatsappOptIn,
-        items,
-        totals: { subtotal, tax, total },
-        status: "placed"
+    const adminAlertNumber = getAdminAlertWhatsAppNumber();
+    if (adminAlertNumber) {
+      try {
+        await sendWhatsAppMessage({
+          to: adminAlertNumber,
+          body: formatAdminOrderAlertMessage(orderPayload)
+        });
+      } catch (error) {
+        console.error("Admin WhatsApp alert failed:", error.message);
       }
+    }
+
+    res.status(201).json({
+      data: orderPayload
     });
   })
 );

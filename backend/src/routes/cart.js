@@ -17,11 +17,11 @@ const itemParamSchema = z.object({
 
 const addItemSchema = z.object({
   productId: z.coerce.number().int().positive(),
-  quantity: z.coerce.number().int().positive().max(20)
+  quantity: z.coerce.number().positive().max(20)
 });
 
 const updateItemSchema = z.object({
-  quantity: z.coerce.number().int().min(0).max(20)
+  quantity: z.coerce.number().min(0).max(20)
 });
 
 const getOrCreateCartId = async (sessionId) => {
@@ -58,7 +58,7 @@ const getCartPayload = async (sessionId) => {
 
   const cartId = cartResult.rows[0].id;
   const itemsResult = await db.query(
-    "SELECT ci.id, ci.quantity, ci.unit_price, p.id AS product_id, p.name, p.description, p.image_url " +
+    "SELECT ci.id, ci.quantity, ci.unit_price, p.id AS product_id, p.name, p.description, p.image_url, p.unit_type " +
       "FROM cart_items ci JOIN products p ON ci.product_id = p.id " +
       "WHERE ci.cart_id = $1 ORDER BY ci.id ASC",
     [cartId]
@@ -70,9 +70,10 @@ const getCartPayload = async (sessionId) => {
     name: row.name,
     description: row.description,
     imageUrl: row.image_url,
-    quantity: row.quantity,
+    unitType: row.unit_type,
+    quantity: Number(row.quantity),
     unitPrice: Number(row.unit_price),
-    lineTotal: Number(row.unit_price) * row.quantity
+    lineTotal: Number(row.unit_price) * Number(row.quantity)
   }));
 
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -103,7 +104,7 @@ router.post(
     const { productId, quantity } = req.body;
 
     const productResult = await db.query(
-      "SELECT id, price FROM products WHERE id = $1 AND is_active = TRUE",
+      "SELECT id, price, unit_type FROM products WHERE id = $1 AND is_active = TRUE",
       [productId]
     );
 
@@ -111,6 +112,7 @@ router.post(
       return res.status(404).json({ error: { message: "Product not found" } });
     }
 
+    const product = productResult.rows[0];
     const cartId = await getOrCreateCartId(sessionId);
 
     const existingItem = await db.query(
@@ -120,11 +122,16 @@ router.post(
 
     if (existingItem.rows.length) {
       const current = existingItem.rows[0];
-      const newQuantity = current.quantity + quantity;
+      const newQuantity = Number(current.quantity) + quantity;
+      if (product.unit_type === 'kg' && newQuantity > 5) {
+        return res
+          .status(400)
+          .json({ error: { message: "Maximum 5 kg per cake" } });
+      }
       if (newQuantity > 20) {
         return res
           .status(400)
-          .json({ error: { message: "Quantity limit is 20" } });
+          .json({ error: { message: "Quantity limit reached" } });
       }
       await db.query(
         "UPDATE cart_items SET quantity = $1 WHERE id = $2",
@@ -133,7 +140,7 @@ router.post(
     } else {
       await db.query(
         "INSERT INTO cart_items (cart_id, product_id, quantity, unit_price) VALUES ($1, $2, $3, $4)",
-        [cartId, productId, quantity, productResult.rows[0].price]
+        [cartId, productId, quantity, product.price]
       );
     }
 

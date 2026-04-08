@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/styles.css?v=20260409-portion-switch" />
   </head>
   <body>
     <script src="config.js"></script>
@@ -91,8 +91,12 @@
             </p>
             <div class="card-grid">
               <article class="card">
-                <h3>Bakery</h3>
-                <p>Signature cakes, pastries, brownies, and baked favorites.</p>
+                <h3>Cakes</h3>
+                <p>Freshly baked cakes in 10 flavors. Order by the kg.</p>
+              </article>
+              <article class="card">
+                <h3>Pastries</h3>
+                <p>Delicious pastries in 10 flavors. Order by the piece.</p>
               </article>
               <article class="card">
                 <h3>Fast Food</h3>
@@ -186,7 +190,7 @@
                 <h2>Visit Cakes n Bakes 365</h2>
                 <p>
                   Address: Cakes n Bakes 365, Mehrauli ND-30<br />
-                  Phone: <a href="tel:9319426397">9319426397</a>
+                  Phone: <a href="tel:9899958140">9899958140</a>
                 </p>
                 <div class="info-card">
                   <h3>Quick support</h3>
@@ -286,14 +290,25 @@
         <div class="container footer-inner">
           <div>
             <strong>Cakes n Bakes 365</strong>
-            <p>Mehrauli ND-30 • 9319426397</p>
+            <p>Mehrauli ND-30 • 9899958140</p>
           </div>
-          <p>Bakery + Fast Food + Snacks + Drinks</p>
+          <p>Cakes + Pastries + Fast Food + Snacks + Drinks</p>
         </div>
       </footer>
     </div>
 
+    <div class="qty-modal-overlay" id="qty-modal-overlay">
+      <div class="qty-modal">
+        <button class="qty-modal-close" id="qty-modal-close">&times;</button>
+        <h3 id="qty-modal-title">Select Quantity</h3>
+        <p class="qty-modal-price" id="qty-modal-price"></p>
+        <div class="qty-modal-options" id="qty-modal-options"></div>
+        <div class="qty-modal-total" id="qty-modal-total"></div>
+        <button class="btn primary qty-modal-add" id="qty-modal-add">Add to Cart</button>
+      </div>
+    </div>
+
     <div class="toast" id="toast"></div>
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=20260409-portion-switch"></script>
   </body>
 </html>

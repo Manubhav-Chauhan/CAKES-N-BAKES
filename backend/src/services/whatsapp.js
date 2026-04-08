@@ -1,4 +1,9 @@
 const DEFAULT_BUSINESS_NAME = "Cakes n Bakes 365";
+const currency = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0
+});
 
 const STATUS_LABELS = {
   placed: "placed",
@@ -66,6 +71,72 @@ const formatHelpMessage = () => {
   return `Welcome to ${businessName}! Send STATUS <order id> to get the latest update. Example: STATUS 1024.`;
 };
 
+const getAdminAlertWhatsAppNumber = () =>
+  String(
+    process.env.ADMIN_WHATSAPP_NUMBER || process.env.WHATSAPP_NUMBER || ""
+  ).trim();
+
+const formatItemQuantity = (item) => {
+  const quantity = Number(item.quantity);
+
+  if (item.unitType === "kg") {
+    return `${quantity} kg`;
+  }
+
+  if (item.unitType === "piece") {
+    return `${quantity} pc${quantity > 1 ? "s" : ""}`;
+  }
+
+  return `${quantity}`;
+};
+
+const formatItemRate = (item) => {
+  const unitPrice = currency.format(Number(item.unitPrice));
+
+  if (item.unitType === "kg") return `${unitPrice}/kg`;
+  if (item.unitType === "piece") return `${unitPrice}/pc`;
+  return unitPrice;
+};
+
+const formatAdminOrderAlertMessage = ({
+  orderId,
+  customerName,
+  phone,
+  address,
+  notes,
+  whatsappOptIn,
+  items,
+  totals
+}) => {
+  const businessName =
+    process.env.WHATSAPP_BUSINESS_NAME || DEFAULT_BUSINESS_NAME;
+  const lines = [
+    `New order at ${businessName}`,
+    `Order #${orderId}`,
+    "",
+    `Customer: ${customerName}`,
+    `Phone: ${phone}`,
+    `Address: ${address || "Not provided"}`,
+    `WhatsApp updates: ${whatsappOptIn ? "Yes" : "No"}`,
+    `Notes: ${notes || "-"}`,
+    "",
+    "Items:"
+  ];
+
+  items.forEach((item) => {
+    lines.push(
+      `- ${item.name}: ${formatItemQuantity(item)} x ${formatItemRate(item)} = ${currency.format(Number(item.lineTotal))}`
+    );
+  });
+
+  lines.push("");
+  lines.push(`Subtotal: ${currency.format(Number(totals.subtotal || 0))}`);
+  lines.push(`Tax: ${currency.format(Number(totals.tax || 0))}`);
+  lines.push(`Total: ${currency.format(Number(totals.total || 0))}`);
+
+  return lines.join("\n");
+};
+
 const escapeXml = (value) =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -127,9 +198,11 @@ const sendWhatsAppMessage = async ({ to, body }) => {
 module.exports = {
   buildTwimlMessage,
   buildWhatsAppTo,
+  formatAdminOrderAlertMessage,
   formatHelpMessage,
   formatOrderStatusMessage,
   formatStatusLabel,
+  getAdminAlertWhatsAppNumber,
   isWhatsAppEnabled,
   normalizePhone,
   sendWhatsAppMessage
