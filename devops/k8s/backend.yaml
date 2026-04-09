@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/your-github-username/cakesnbakes-backend:latest
+          image: ghcr.io/rakshitmalik136/cakesnbakes-backend:latest
           ports:
             - containerPort: 4000
           envFrom:

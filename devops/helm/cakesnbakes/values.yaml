@@ -3,11 +3,11 @@ fullnameOverride: ""
 
 images:
   backend:
-    repository: ghcr.io/your-github-username/cakesnbakes-backend
+    repository: ghcr.io/rakshitmalik136/cakesnbakes-backend
     tag: latest
     pullPolicy: IfNotPresent
   frontend:
-    repository: ghcr.io/your-github-username/cakesnbakes-frontend
+    repository: ghcr.io/rakshitmalik136/cakesnbakes-frontend
     tag: latest
     pullPolicy: IfNotPresent
   postgres:
@@ -29,7 +29,7 @@ appConfig:
   NODE_ENV: production
   PORT: "4000"
   CLIENT_ORIGIN: "https://cakes.local,http://localhost"
-  WHATSAPP_ENABLED: "false"
+  WHATSAPP_ENABLED: "true"
   WHATSAPP_DEFAULT_COUNTRY_CODE: "+91"
   WHATSAPP_BUSINESS_NAME: "Cakes n Bakes 365"
   API_BASE: "/api"
@@ -37,19 +37,19 @@ appConfig:
 secrets:
   POSTGRES_DB: cakesnbakes
   POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: change-me
-  DATABASE_URL: postgres://postgres:change-me@{{ include "cakesnbakes.fullname" . }}-db:5432/cakesnbakes
-  ADMIN_USERNAME: admin
-  ADMIN_PASSWORD: change-me
-  ADMIN_AUTH_SECRET: please-change-this-secret
+  POSTGRES_PASSWORD: ../../.env/POSTGRES_PASSWORD
+  DATABASE_URL: postgres://postgres:../../.env/POSTGRES_PASSWORD@{{ include "cakesnbakes.fullname" . }}-db:5432/cakesnbakes
+  ADMIN_USERNAME: ../../.env/ADMIN_USERNAME
+  ADMIN_PASSWORD: ../../.env/ADMIN_PASSWORD
+  ADMIN_AUTH_SECRET: ../../.env/ADMIN_AUTH_SECRET
   ADMIN_TOKEN_TTL_SECONDS: "43200"
-  ADMIN_VIEW_USER: adminviewer
-  ADMIN_VIEW_PASSWORD: change-me
-  WHATSAPP_ACCOUNT_SID: ""
-  WHATSAPP_AUTH_TOKEN: ""
-  WHATSAPP_FROM: ""
-  WHATSAPP_NUMBER: ""
-  ADMIN_WHATSAPP_NUMBER: ""
+  ADMIN_VIEW_USER: ../../.env/ADMIN_VIEW_USER
+  ADMIN_VIEW_PASSWORD: ../../.env/ADMIN_VIEW_PASSWORD
+  WHATSAPP_ACCOUNT_SID: ../../.env/WHATSAPP_ACCOUNT_SID
+  WHATSAPP_AUTH_TOKEN: ../../.env/WHATSAPP_AUTH_TOKEN
+  WHATSAPP_FROM: ../../.env/WHATSAPP_FROM
+  WHATSAPP_NUMBER: ../../.env/WHATSAPP_NUMBER
+  ADMIN_WHATSAPP_NUMBER: ../../.env/ADMIN_WHATSAPP_NUMBER
 
 postgres:
   storage: 2Gi
