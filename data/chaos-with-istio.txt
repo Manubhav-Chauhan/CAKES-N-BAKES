@@ -1,0 +1,61 @@
+
+============================================
+  Cakes n Bakes 365 — Metrics Collection
+============================================
+
+  Prometheus:  http://localhost:9090
+  Duration:    1m
+  Timestamp:   2026-05-02T01:59:43+05:30
+
+[0;32m[METRICS][0m Collecting metrics...
+
+[0;36m━━━ Phase: Current State ━━━[0m
+
+  Metric                         Value
+  ────────────────────────────── ──────────
+  Latency (p50)                  5.000 ms
+  Latency (p95)                  9.5000 ms
+  Latency (p99)                  9.9000 ms
+  Latency (avg)                  .4844977782805429000 ms
+  Request rate                   4.271070555555555 req/s
+  Total requests                 256.3894666666667
+  Error rate (5xx)               32.644696807857926 %
+  Total 5xx errors               241.394
+  Success rate (2xx)             34.710343740869554 %
+  Backend probe (1=up)           1
+  Frontend probe (1=up)          0
+  Probe latency (backend)        0.004165523 s
+
+
+[0;36m━━━ Istio Metrics ━━━[0m
+
+  Metric                         Value
+  ────────────────────────────── ──────────
+  Istio request rate             N/A req/s
+  Istio error rate (5xx)         N/A %
+  Istio latency (p50)            N/A ms
+  Istio latency (p95)            N/A ms
+  Istio latency (p99)            N/A ms
+
+
+============================================
+  Research Paper Data Collection Guide
+============================================
+
+Run this script 3 times to collect data for your paper:
+
+  1. BASELINE (healthy system):
+     ./scripts/collect-metrics.sh http://localhost:9090 5m > data/baseline.txt
+
+  2. CHAOS WITHOUT ISTIO (delete Istio policies first):
+     kubectl delete -f devops/istio/destination-rule.yaml
+     kubectl delete -f devops/istio/virtual-service.yaml
+     # Run chaos experiment, wait 2min, then:
+     ./scripts/collect-metrics.sh http://localhost:9090 5m > data/chaos-no-istio.txt
+
+  3. CHAOS WITH ISTIO (re-apply Istio policies):
+     kubectl apply -f devops/istio/destination-rule.yaml
+     kubectl apply -f devops/istio/virtual-service.yaml
+     # Run same chaos experiment, wait 2min, then:
+     ./scripts/collect-metrics.sh http://localhost:9090 5m > data/chaos-with-istio.txt
+

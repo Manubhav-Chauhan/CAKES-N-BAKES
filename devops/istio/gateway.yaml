@@ -1,0 +1,30 @@
+# Istio Gateway
+# ────────────────────────────────────────────────
+# Exposes the application to external traffic on ports 80 and 443
+# for host cakes.local. Used by the cnb-gateway-vs VirtualService.
+# ────────────────────────────────────────────────
+
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: cnb-gateway
+  namespace: cakesnbakes
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - cakes.local
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      hosts:
+        - cakes.local
+      tls:
+        mode: SIMPLE
+        credentialName: cnb-tls-credential

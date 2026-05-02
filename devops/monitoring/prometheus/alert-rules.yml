@@ -16,3 +16,69 @@ groups:
           severity: warning
         annotations:
           summary: "Frontend endpoint is down"
+
+  # ── Chaos Engineering Alerts ──────────────────────────────────
+  # These alerts fire during chaos experiments to help identify
+  # the impact of fault injection.
+
+  - name: cnb-chaos-alerts
+    rules:
+      # Fires when p95 latency exceeds 1 second
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[2m])) by (le)) > 1
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 latency exceeds 1 second"
+          description: "The 95th percentile response time is {{ $value }}s. Normal baseline is < 200ms."
+
+      # Fires when p99 latency exceeds 2 seconds
+      - alert: CriticalLatency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[2m])) by (le)) > 2
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "p99 latency exceeds 2 seconds"
+          description: "The 99th percentile response time is {{ $value }}s. This likely indicates a chaos experiment is active."
+
+      # Fires when 5xx error rate exceeds 5%
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[2m])) / sum(rate(http_requests_total[2m])) * 100 > 5
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error rate exceeds 5%"
+          description: "Current 5xx error rate is {{ $value }}%. Normal baseline is 0%."
+
+      # Fires when error rate exceeds 50% — likely total failure
+      - alert: CriticalErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[2m])) / sum(rate(http_requests_total[2m])) * 100 > 50
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error rate exceeds 50%"
+          description: "Current 5xx error rate is {{ $value }}%. This indicates a severe outage or unmitigated chaos experiment."
+
+      # Fires when request rate drops to near zero
+      - alert: NoTraffic
+        expr: sum(rate(http_requests_total[2m])) == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No requests reaching the backend"
+          description: "The backend has received zero requests in the last 2 minutes."
+
+      # Fires when Istio circuit breaker ejects a host
+      - alert: CircuitBreakerTripped
+        expr: sum(increase(istio_requests_total{response_code="503", response_flags="UO"}[2m])) > 0
+        for: 10s
+        labels:
+          severity: info
+        annotations:
+          summary: "Istio circuit breaker has tripped"
+          description: "The circuit breaker ejected a host. This means the outlier detection policy is working as designed."

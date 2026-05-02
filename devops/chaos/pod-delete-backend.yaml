@@ -1,0 +1,41 @@
+# LitmusChaos Experiment: Pod Delete — Backend
+# ────────────────────────────────────────────────
+# Randomly kills a cnb-backend pod every 10 seconds for 60 seconds.
+#
+# Purpose: Tests whether the system can handle backend pod failures.
+# Expected behavior WITHOUT Istio: Requests routed to the dying pod return
+#   connection-refused or 502 errors. Users see failed menu loads or order
+#   submissions during the window.
+# Expected behavior WITH Istio: Circuit breaker ejects the unhealthy pod,
+#   retries route to the surviving replica. Users may experience a brief
+#   delay but no errors.
+# ────────────────────────────────────────────────
+
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cnb-backend-pod-delete
+  namespace: cakesnbakes
+spec:
+  appinfo:
+    appns: cakesnbakes
+    applabel: "app=cnb-backend"
+    appkind: deployment
+  engineState: active
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            # Kill pods every 10 seconds
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            # Force-delete the pod (don't wait for graceful shutdown)
+            - name: FORCE
+              value: "true"
+            # Number of pods to kill per interval
+            - name: PODS_AFFECTED_PERC
+              value: "50"

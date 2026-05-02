@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/your-github-username/cakesnbakes-frontend:latest
+          image: cnb-frontend:local
+          imagePullPolicy: Never
           ports:
             - containerPort: 80
           env:

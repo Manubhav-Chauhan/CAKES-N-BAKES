@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/rakshitmalik136/cakesnbakes-backend:latest
+          image: cnb-backend:local
+          imagePullPolicy: Never
           ports:
             - containerPort: 4000
           envFrom:

@@ -1,0 +1,44 @@
+# LitmusChaos Experiment: Network Loss — Database
+# ────────────────────────────────────────────────
+# Injects 100% packet loss on the cnb-db (PostgreSQL) pod for
+# 60 seconds. This simulates a complete network partition between
+# the backend and the database.
+#
+# Purpose: Tests how the system handles a total database network
+#   outage — the most extreme network fault possible.
+# Expected behavior WITHOUT Istio: Backend hangs waiting for
+#   PostgreSQL responses. Requests queue up and eventually timeout
+#   at the TCP level (30+ seconds). All data-dependent endpoints
+#   fail with connection errors.
+# Expected behavior WITH Istio: Circuit breaker on cnb-db detects
+#   consecutive gateway errors and fast-ejects the host. Backend
+#   requests fail fast (within 3s timeout) instead of hanging for
+#   30+ seconds.
+# ────────────────────────────────────────────────
+
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cnb-db-network-loss
+  namespace: cakesnbakes
+spec:
+  appinfo:
+    appns: cakesnbakes
+    applabel: "app=cnb-db"
+    appkind: deployment
+  engineState: active
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-network-loss
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            # 100% packet loss
+            - name: NETWORK_PACKET_LOSS_PERCENTAGE
+              value: "100"
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+            - name: NETWORK_INTERFACE
+              value: "eth0"

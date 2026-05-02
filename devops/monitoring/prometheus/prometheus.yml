@@ -18,15 +18,23 @@ scrape_configs:
     static_configs:
       - targets: ["cadvisor:8080"]
 
+  - job_name: cnb-backend-app
+    metrics_path: /metrics
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["192.168.47.17:4000"]
+        labels:
+          service: cnb-backend
+
   - job_name: cnb-http-probes
     metrics_path: /probe
     params:
       module: [http_2xx]
     static_configs:
       - targets:
-          - http://host.docker.internal:8081/
-          - http://host.docker.internal:4000/api/health
-          - https://host.docker.internal/api/health
+          - http://192.168.47.17:8081/
+          - http://192.168.47.17:4000/api/health
+          - https://192.168.47.17/api/health
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

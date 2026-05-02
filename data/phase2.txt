@@ -1,0 +1,25 @@
+  Istio latency (p95)            N/A ms
+  Istio latency (p99)            N/A ms
+
+
+============================================
+  Research Paper Data Collection Guide
+============================================
+
+Run this script 3 times to collect data for your paper:
+
+  1. BASELINE (healthy system):
+     ./scripts/collect-metrics.sh http://localhost:9090 5m > data/baseline.txt
+
+  2. CHAOS WITHOUT ISTIO (delete Istio policies first):
+     kubectl delete -f devops/istio/destination-rule.yaml
+     kubectl delete -f devops/istio/virtual-service.yaml
+     # Run chaos experiment, wait 2min, then:
+     ./scripts/collect-metrics.sh http://localhost:9090 5m > data/chaos-no-istio.txt
+
+  3. CHAOS WITH ISTIO (re-apply Istio policies):
+     kubectl apply -f devops/istio/destination-rule.yaml
+     kubectl apply -f devops/istio/virtual-service.yaml
+     # Run same chaos experiment, wait 2min, then:
+     ./scripts/collect-metrics.sh http://localhost:9090 5m > data/chaos-with-istio.txt
+

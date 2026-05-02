@@ -1,0 +1,79 @@
+# Istio Resilience Configuration
+# ────────────────────────────────────────────────
+# DestinationRule — Circuit Breakers for backend and database services.
+#
+# Backend circuit breaker:
+#   - Max 100 TCP connections, 50 pending HTTP requests
+#   - Ejects a pod after 3 consecutive 5xx errors
+#   - Checks every 30 seconds, ejects for 60 seconds
+#
+# Database circuit breaker:
+#   - Max 50 TCP connections
+#   - Ejects after 2 consecutive gateway errors
+#   - Checks every 10 seconds, ejects for 30 seconds
+# ────────────────────────────────────────────────
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: cnb-backend-circuit-breaker
+  namespace: cakesnbakes
+spec:
+  host: cnb-backend
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+        connectTimeout: 5s
+      http:
+        h2UpgradePolicy: DEFAULT
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 10
+        maxRetries: 3
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 50
+      minHealthPercent: 30
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: cnb-db-circuit-breaker
+  namespace: cakesnbakes
+spec:
+  host: cnb-db
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 50
+        connectTimeout: 3s
+    outlierDetection:
+      consecutiveGatewayErrors: 2
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 100
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: cnb-frontend-circuit-breaker
+  namespace: cakesnbakes
+spec:
+  host: cnb-frontend
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 200
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 200
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50

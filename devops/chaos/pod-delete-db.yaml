@@ -1,0 +1,41 @@
+# LitmusChaos Experiment: Pod Delete — Database
+# ────────────────────────────────────────────────
+# Kills the cnb-db (PostgreSQL) pod once during a 60-second window.
+#
+# Purpose: Tests cascading failure — when the database goes down,
+#   ALL backend API calls that touch the database will fail.
+#   This is the most severe fault you can inject.
+# Expected behavior WITHOUT Istio: 100% error rate on all data-dependent
+#   endpoints (/api/menu, /api/cart, /api/orders). Error responses
+#   propagate directly to the user.
+# Expected behavior WITH Istio: Circuit breaker detects the database
+#   is down and fast-fails requests instead of hanging. Timeout policy
+#   caps wait time at 3 seconds. Users see a quick error instead of
+#   infinite loading.
+# ────────────────────────────────────────────────
+
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cnb-db-pod-delete
+  namespace: cakesnbakes
+spec:
+  appinfo:
+    appns: cakesnbakes
+    applabel: "app=cnb-db"
+    appkind: deployment
+  engineState: active
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "60"
+            - name: FORCE
+              value: "true"
+            - name: PODS_AFFECTED_PERC
+              value: "100"

@@ -1,0 +1,55 @@
+# LitmusChaos Experiment: Network Latency — Backend
+# ────────────────────────────────────────────────
+# Injects 5000ms (5 second) network delay into cnb-backend pods
+# for 120 seconds.
+#
+# Purpose: Simulates a slow network or degraded connectivity between
+#   services. This is common in cloud environments during network
+#   congestion or cross-region calls.
+# Expected behavior WITHOUT Istio: Every request to the backend takes
+#   at least 5 extra seconds. Menu pages feel frozen. Cart operations
+#   may timeout at the browser level. Users experience extreme
+#   slowness with no feedback.
+# Expected behavior WITH Istio: The 2-second timeout policy kicks in —
+#   requests are killed after 2 seconds instead of waiting 5+ seconds.
+#   Retries route to the other replica. If both replicas are affected,
+#   the circuit breaker ejects them and returns a fast error.
+# ────────────────────────────────────────────────
+
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cnb-backend-network-latency
+  namespace: cakesnbakes
+spec:
+  appinfo:
+    appns: cakesnbakes
+    applabel: "app=cnb-backend"
+    appkind: deployment
+  engineState: active
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            # Total duration of chaos
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            # Latency in milliseconds to inject
+            - name: NETWORK_LATENCY
+              value: "5000"
+            # Jitter in milliseconds (variation in delay)
+            - name: JITTER
+              value: "1000"
+            # Percentage of pods to target
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+            # Network interface inside the pod
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            # Target the database service port specifically
+            - name: DESTINATION_IPS
+              value: ""
+            - name: DESTINATION_HOSTS
+              value: "cnb-db"

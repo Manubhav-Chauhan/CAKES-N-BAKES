@@ -1,0 +1,15 @@
+# Istio mTLS Configuration
+# ────────────────────────────────────────────────
+# PeerAuthentication — enables mutual TLS between all services in the
+# cakesnbakes namespace. Set to PERMISSIVE so non-mesh traffic (e.g.,
+# Prometheus scraping) still works during the transition period.
+# ────────────────────────────────────────────────
+
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: cnb-mtls
+  namespace: cakesnbakes
+spec:
+  mtls:
+    mode: PERMISSIVE

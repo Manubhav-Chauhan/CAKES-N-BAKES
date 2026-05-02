@@ -1,0 +1,101 @@
+# Istio Resilience Configuration
+# ────────────────────────────────────────────────
+# VirtualService — Timeouts and Retries for backend and database services.
+#
+# Backend:
+#   - 2 second overall timeout per request
+#   - 3 retry attempts on 5xx, reset, or connect-failure
+#   - 1 second per-try timeout
+#
+# Database:
+#   - 3 second overall timeout
+#   - 2 retry attempts on connect-failure and unavailable
+# ────────────────────────────────────────────────
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: cnb-backend-vs
+  namespace: cakesnbakes
+spec:
+  hosts:
+    - cnb-backend
+  http:
+    - route:
+        - destination:
+            host: cnb-backend
+            port:
+              number: 4000
+      timeout: 2s
+      retries:
+        attempts: 3
+        perTryTimeout: 1s
+        retryOn: 5xx,reset,connect-failure,retriable-4xx
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: cnb-db-vs
+  namespace: cakesnbakes
+spec:
+  hosts:
+    - cnb-db
+  tcp:
+    - route:
+        - destination:
+            host: cnb-db
+            port:
+              number: 5432
+      match:
+        - port: 5432
+
+---
+# External-facing VirtualService bound to the Istio Gateway
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: cnb-gateway-vs
+  namespace: cakesnbakes
+spec:
+  hosts:
+    - cakes.local
+  gateways:
+    - cnb-gateway
+  http:
+    # API traffic → backend
+    - match:
+        - uri:
+            prefix: /api
+      route:
+        - destination:
+            host: cnb-backend
+            port:
+              number: 4000
+      timeout: 2s
+      retries:
+        attempts: 3
+        perTryTimeout: 1s
+        retryOn: 5xx,reset,connect-failure
+
+    # Metrics endpoint → backend (not retried)
+    - match:
+        - uri:
+            exact: /metrics
+      route:
+        - destination:
+            host: cnb-backend
+            port:
+              number: 4000
+
+    # All other traffic → frontend
+    - route:
+        - destination:
+            host: cnb-frontend
+            port:
+              number: 80
+      timeout: 5s
+      retries:
+        attempts: 2
+        perTryTimeout: 2s
+        retryOn: 5xx,connect-failure
