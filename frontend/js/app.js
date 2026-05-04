@@ -404,6 +404,10 @@ const updateCartCount = () => {
 };
 
 const addToCart = async (productId, quantity) => {
+  if (window.shopIsOpen === false) {
+    toast("Shop is currently closed.");
+    return;
+  }
   try {
     await request(`/cart/${sessionId}/items`, {
       method: "POST",
@@ -624,6 +628,10 @@ const handleCheckout = () => {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (window.shopIsOpen === false) {
+      toast("Shop is currently closed.");
+      return;
+    }
     const message = qs("#checkout-message");
 
     if (!state.cart.items.length) {
@@ -1011,6 +1019,45 @@ const initNav = () => {
   });
 };
 
+const checkShopStatus = () => {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const time = hours + minutes / 60;
+
+  // 12:00 to 16:00 AND 17:30 to 22:00
+  const isOpen = (time >= 12 && time < 16) || (time >= 17.5 && time < 22);
+  
+  window.shopIsOpen = isOpen;
+
+  let banner = qs("#shop-status-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "shop-status-banner";
+    const main = qs(".site-main");
+    if (main) {
+      main.prepend(banner);
+    }
+  }
+
+  if (isOpen) {
+    document.body.classList.remove("shop-closed");
+    banner.classList.remove("closed");
+    banner.innerHTML = "";
+  } else {
+    document.body.classList.add("shop-closed");
+    if (!banner.classList.contains("closed")) {
+      banner.classList.add("closed");
+      banner.innerHTML = `
+        <div class="banner-content">
+          <span class="icon">🌙</span>
+          <p><strong>We are currently closed.</strong> Our shop hours are 12:00 PM - 4:00 PM and 5:30 PM - 10:00 PM.</p>
+        </div>
+      `;
+    }
+  }
+};
+
 const init = () => {
   initNav();
   handleAdminLogin();
@@ -1023,6 +1070,9 @@ const init = () => {
   loadMenu("All");
   refreshCart();
   handleCheckout();
+
+  checkShopStatus();
+  setInterval(checkShopStatus, 60000); // Re-check every minute
 };
 
 init();

@@ -915,3 +915,56 @@ img {
     grid-template-columns: 1fr;
   }
 }
+
+/* Shop Status Banner */
+#shop-status-banner {
+  display: none;
+  background: var(--accent-strong);
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  font-weight: 500;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+}
+
+#shop-status-banner.closed {
+  display: block;
+  animation: slideUpBanner 0.5s ease-out forwards;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.banner-content .icon {
+  font-size: 1.5rem;
+  animation: pulseMoon 2.5s infinite ease-in-out;
+}
+
+@keyframes slideUpBanner {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseMoon {
+  0%, 100% { transform: scale(1) rotate(-10deg); opacity: 0.8; }
+  50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+}
+
+/* Disabled state when shop is closed */
+body.shop-closed [data-add-item],
+body.shop-closed [data-add-portion],
+body.shop-closed #qty-modal-add,
+body.shop-closed #checkout-form button[type="submit"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
