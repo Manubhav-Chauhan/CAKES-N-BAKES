@@ -38,7 +38,7 @@ img {
 }
 
 .container {
-  width: min(90vw, var(--max-width));
+  width: 96%;
   margin: 0 auto;
 }
 
