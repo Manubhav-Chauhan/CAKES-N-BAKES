@@ -3,7 +3,7 @@
   hosts: app
   become: true
   vars:
-    repo_url: "https://github.com/your-github-username/cakesnbakes-365.git"
+    repo_url: "https://github.com/rakshitmalik136/Final-year_Project.git"
     app_dir: "/opt/cakesnbakes-365"
 
   tasks:

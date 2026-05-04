@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: cnb-frontend:local
-          imagePullPolicy: Never
+          image: cnb-frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           env:

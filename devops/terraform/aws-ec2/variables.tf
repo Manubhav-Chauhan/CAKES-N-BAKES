@@ -45,5 +45,5 @@ variable "allowed_ssh_cidr" {
 variable "repo_url" {
   description = "Git repository URL for auto deploy on boot"
   type        = string
-  default     = "https://github.com/your-github-username/cakesnbakes-365.git"
+  default     = "https://github.com/rakshitmalik136/Final-year_Project.git"
 }

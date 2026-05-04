@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: cnb-backend:local
-          imagePullPolicy: Never
+          image: cnb-backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 4000
           envFrom:
