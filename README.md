@@ -1,43 +1,9 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" />
-  <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
-  <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" />
-  <img src="https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white" />
-  <img src="https://img.shields.io/badge/Ansible-EE0000?style=for-the-badge&logo=ansible&logoColor=white" />
-  <img src="https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" />
-  <img src="https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white" />
-  <img src="https://img.shields.io/badge/Istio-466BB0?style=for-the-badge&logo=istio&logoColor=white" />
-  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white" />
-  <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" />
-  <img src="https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white" />
-  <img src="https://img.shields.io/badge/Helm-0F1689?style=for-the-badge&logo=helm&logoColor=white" />
-  <img src="https://img.shields.io/badge/LitmusChaos-451FDB?style=for-the-badge&logo=litmus&logoColor=white" />
-</p>
-
 <h1 align="center">Cakes n Bakes 365</h1>
 
 <p align="center">
   <strong>A Production-Grade Full-Stack Bakery Ordering Platform with End-to-End DevOps Pipeline</strong>
 </p>
 
-<p align="center">
-  <a href="https://github.com/rakshitmalik136/Final-year_Project/actions"><img src="https://github.com/rakshitmalik136/Final-year_Project/actions/workflows/ci-cd.yml/badge.svg" alt="CI/CD" /></a>
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License" />
-  <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node" />
-  <img src="https://img.shields.io/badge/docker--compose-v2-blue" alt="Docker Compose" />
-  <img src="https://img.shields.io/badge/k8s-1.28+-326CE5" alt="Kubernetes" />
-</p>
-
-<p align="center">
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-deployment-methods">Deployment</a> •
-  <a href="#-monitoring--observability">Monitoring</a> •
-  <a href="#-chaos-engineering--resilience">Resilience</a> •
-  <a href="#-cicd-pipelines">CI/CD</a>
-</p>
 
 ---
 
@@ -304,7 +270,7 @@ docker compose up -d --build
 | Service | URL | Notes |
 |---------|-----|-------|
 | App | https://localhost | Accept the self-signed cert warning |
-| love Health Check | https://localhost/api/health | Returns `{"status":"ok"}` |
+| Health Check | https://localhost/api/health | Returns `{"status":"ok"}` |
 | Admin Panel | https://localhost/admin | Basic Auth protected |
 | Metrics | http://localhost:4000/metrics | Prometheus format |
 
