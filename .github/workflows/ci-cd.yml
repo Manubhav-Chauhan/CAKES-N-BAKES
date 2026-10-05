@@ -108,7 +108,7 @@ jobs:
             type=sha
 
       - name: Push backend image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: true
@@ -126,7 +126,7 @@ jobs:
             type=sha
 
       - name: Push frontend image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./frontend
           push: true
