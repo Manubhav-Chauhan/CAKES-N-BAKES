@@ -10,7 +10,8 @@ DevOps Showcase — A comprehensive demonstration of containerization, CI/CD, or
 
  
  System Overview
- ┌─────────────────────────────────────────────────────────────┐
+ 
+┌─────────────────────────────────────────────────────────────┐
 │                        CLIENTS                              │
 │                   (Browser / Mobile)                        │
 └──────────────────────┬──────────────────────────────────────┘
