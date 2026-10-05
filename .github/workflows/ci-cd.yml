@@ -100,7 +100,7 @@ jobs:
       # Build and push backend image
       - name: Backend image metadata
         id: meta_backend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/cakesnbakes-backend
           tags: |
@@ -118,7 +118,7 @@ jobs:
       # Build and push frontend image
       - name: Frontend image metadata
         id: meta_frontend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/cakesnbakes-frontend
           tags: |
